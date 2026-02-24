@@ -208,6 +208,18 @@
             transform: translateY(-1px);
             box-shadow: 0 12px 22px rgba(8, 73, 138, 0.35);
         }
+        
+        .line-share-btn {
+            background: linear-gradient(145deg, #06c755, #05ad4b);
+            box-shadow: 0 8px 18px rgba(6, 199, 85, 0.3);
+        }
+
+        .line-share-btn:hover {
+            background: linear-gradient(145deg, #05ad4b, #059f45);
+            box-shadow: 0 12px 22px rgba(5, 173, 75, 0.36);
+        }
+
+        .hidden { display: none; }
 
         #result {
             padding: 11px 14px;
@@ -355,7 +367,9 @@
 
             <div class="actions">
                 <button type="button" id="checkEligibility">ตรวจสอบคุณสมบัติและเอกสาร</button>
+                <button type="button" id="shareLineButton" class="line-share-btn hidden">แชร์สรุปไป LINE</button>
                 <div id="result" role="status" aria-live="polite"></div>
+                <p class="helper hidden" id="shareHint">คัดลอกข้อความสรุปแล้ว และพยายามเปิด LINE ให้เรียบร้อย</p>
             </div>
         </form>
     </div>
@@ -368,10 +382,13 @@
         const currentInstallmentInput = document.getElementById('currentInstallment');
         const paidAmountInput = document.getElementById('paidAmount');
         const paymentHint = document.getElementById('paymentHint');
+        const shareLineButton = document.getElementById('shareLineButton');
+        const shareHint = document.getElementById('shareHint');
         const reasonInputs = form.querySelectorAll('input[name="reason"]');
         const customerTypeInputs = form.querySelectorAll('input[name="customerType"]');
         const reasonDocGroups = form.querySelectorAll('.reason-doc');
         const customerDocGroups = form.querySelectorAll('.type-doc');
+        let latestShareMessage = '';
 
         function isChecked(name) {
             const input = form.querySelector(`input[name="${name}"]`);
@@ -428,6 +445,69 @@
 
         function formatMoney(value) {
             return value.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatDateTime(value) {
+            return new Intl.DateTimeFormat('th-TH', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            }).format(value);
+        }
+
+        function getSelectedReasonTexts() {
+            return Array.from(form.querySelectorAll('input[name="reason"]:checked'))
+                .map((input) => input.parentElement.textContent.trim());
+        }
+
+        function getSelectedCustomerTypeText() {
+            const selected = form.querySelector('input[name="customerType"]:checked');
+            return selected ? selected.parentElement.textContent.trim() : '-';
+        }
+
+        function buildLineSummary() {
+            const dpdDays = toNumber(dpdDaysInput.value);
+            const installment = toNumber(currentInstallmentInput.value);
+            const paidAmount = toNumber(paidAmountInput.value);
+            const minPayment = installment * 0.1;
+            const reasons = getSelectedReasonTexts();
+
+            const reasonText = reasons.length > 0 ? reasons.map((reason) => `- ${reason}`).join('\n') : '- ไม่ระบุ';
+
+            return [
+                'สรุปผลตรวจสอบโครงการพักชำระหนี้ (Skip Payment)',
+                `วันที่ตรวจ: ${formatDateTime(new Date())}`,
+                '',
+                'ผลการตรวจ: ผ่านเกณฑ์เบื้องต้นและเอกสารครบ',
+                `ประเภทลูกค้า: ${getSelectedCustomerTypeText()}`,
+                `DPD: ${Number.isFinite(dpdDays) ? dpdDays : '-'} วัน`,
+                `ค่างวดปัจจุบัน: ${Number.isFinite(installment) ? formatMoney(installment) : '-'} บาท`,
+                `ยอดชำระขั้นต่ำ 10%: ${Number.isFinite(minPayment) ? formatMoney(minPayment) : '-'} บาท`,
+                `ยอดที่ชำระแล้ว: ${Number.isFinite(paidAmount) ? formatMoney(paidAmount) : '-'} บาท`,
+                '',
+                'เหตุผลที่ระบุ:',
+                reasonText,
+                '',
+                'สถานะเอกสารที่บังคับ:',
+                '- เอกสารบังคับ 5.1: ครบ',
+                '- เอกสารตามประเภทลูกค้า: ครบ'
+            ].join('\n');
+        }
+
+        async function shareToLine() {
+            if (!latestShareMessage) return;
+
+            const encoded = encodeURIComponent(latestShareMessage);
+            const lineWebUrl = `https://line.me/R/msg/text/?${encoded}`;
+            window.open(lineWebUrl, '_blank');
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(latestShareMessage);
+                    shareHint.classList.remove('hidden');
+                } catch (error) {
+                    shareHint.classList.add('hidden');
+                }
+            }
         }
 
         function updatePaymentRequirements() {
@@ -492,17 +572,24 @@
             if (missingItems.length === 0) {
                 result.className = 'pass';
                 result.textContent = 'ผลการตรวจสอบ: ผ่านเกณฑ์เบื้องต้นและเอกสารครบ สามารถพิจารณาเข้าร่วมโครงการได้';
+                latestShareMessage = buildLineSummary();
+                shareLineButton.classList.remove('hidden');
+                shareHint.classList.add('hidden');
                 return;
             }
 
             result.className = 'fail';
             result.innerHTML = `ผลการตรวจสอบ: ยังไม่ผ่านเกณฑ์/เอกสารไม่ครบ กรุณาตรวจสอบรายการต่อไปนี้<br>- ${missingItems.join('<br>- ')}`;
+            latestShareMessage = '';
+            shareLineButton.classList.add('hidden');
+            shareHint.classList.add('hidden');
         }
 
         reasonInputs.forEach((input) => input.addEventListener('change', updateReasonDocuments));
         customerTypeInputs.forEach((input) => input.addEventListener('change', updateCustomerDocuments));
         currentInstallmentInput.addEventListener('input', updatePaymentRequirements);
         checkButton.addEventListener('click', checkEligibility);
+        shareLineButton.addEventListener('click', shareToLine);
 
         updateReasonDocuments();
         updateCustomerDocuments();
