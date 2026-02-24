@@ -1,0 +1,512 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist ตรวจสอบเงื่อนไขและเอกสารโครงการพักชำระหนี้ (Skip Payment)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-top: #f2f7ff;
+            --bg-bottom: #f8fbf5;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #5b6474;
+            --primary: #0b5cab;
+            --primary-strong: #08498a;
+            --border: #d6dfec;
+            --pass-bg: #eaf8ee;
+            --pass-border: #7dcf92;
+            --pass-text: #14532d;
+            --fail-bg: #fff1f1;
+            --fail-border: #ef9a9a;
+            --fail-text: #8f1f1f;
+            --alert: #b91c1c;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Prompt', 'Sarabun', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 12% 8%, rgba(11, 92, 171, 0.12), transparent 34%),
+                radial-gradient(circle at 88% 10%, rgba(43, 135, 90, 0.12), transparent 30%),
+                linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+            padding: 28px 16px;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            background: var(--card);
+            border: 1px solid rgba(214, 223, 236, 0.65);
+            border-radius: 18px;
+            box-shadow: 0 14px 34px rgba(11, 24, 44, 0.1);
+            overflow: hidden;
+        }
+
+        .topbar {
+            padding: 30px 26px 20px;
+            background: linear-gradient(145deg, #0b5cab, #2c7cc8);
+            color: #f7fbff;
+        }
+
+        .topbar p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .topbar h2 {
+            margin: 8px 0 0;
+            font-size: 24px;
+            line-height: 1.3;
+            font-weight: 600;
+        }
+
+        form { padding: 22px; }
+
+        .section {
+            margin-bottom: 14px;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fcfdff;
+        }
+
+        h3 {
+            margin: 0 0 12px;
+            font-size: 17px;
+            color: #133b65;
+        }
+
+        h4 {
+            margin: 14px 0 8px;
+            font-size: 15px;
+            color: #0f355d;
+        }
+
+        label {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 9px;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.45;
+        }
+        
+        .field-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin: 10px 0 14px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            margin: 0;
+            font-size: 13px;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .input-control {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 9px 10px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+            background: #fff;
+        }
+
+        .input-control:focus {
+            outline: none;
+            border-color: #6aa8e5;
+            box-shadow: 0 0 0 3px rgba(11, 92, 171, 0.12);
+        }
+
+        .helper {
+            margin: 0;
+            font-size: 13px;
+            color: #1e4d7a;
+            font-weight: 500;
+        }
+
+        input[type="checkbox"] {
+            margin-top: 3px;
+            width: 17px;
+            height: 17px;
+            accent-color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .doc-group {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #dce6f4;
+            background: #ffffff;
+        }
+
+        .doc-group-title {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #1b3f6a;
+            font-weight: 600;
+        }
+
+        .reason-doc { display: none; }
+        .reason-doc.active { display: block; }
+        .type-doc { display: none; }
+        .type-doc.active { display: block; }
+
+        .alert {
+            color: var(--alert);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        button {
+            background: linear-gradient(145deg, var(--primary), #2a74be);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 11px 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 8px 18px rgba(11, 92, 171, 0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(145deg, var(--primary-strong), #195d9f);
+            transform: translateY(-1px);
+            box-shadow: 0 12px 22px rgba(8, 73, 138, 0.35);
+        }
+
+        #result {
+            padding: 11px 14px;
+            border-radius: 10px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        #result.pass {
+            display: block;
+            background: var(--pass-bg);
+            border: 1px solid var(--pass-border);
+            color: var(--pass-text);
+        }
+
+        #result.fail {
+            display: block;
+            background: var(--fail-bg);
+            border: 1px solid var(--fail-border);
+            color: var(--fail-text);
+        }
+
+        @media (max-width: 640px) {
+            .topbar { padding: 24px 18px 16px; }
+            .topbar h2 { font-size: 20px; }
+            form { padding: 14px; }
+            .section { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <p>Skip Payment Eligibility</p>
+            <h2>แบบฟอร์มตรวจสอบสิทธิและเอกสารโครงการพักชำระหนี้</h2>
+        </div>
+
+        <form id="skipPaymentChecklist">
+            <div class="section">
+                <h3>1. กลุ่มลูกค้าเป้าหมาย</h3>
+                <label><input type="radio" name="customerType" value="individual"> ลูกค้าบุคคลธรรมดา</label>
+                <label><input type="radio" name="customerType" value="corporate"> ลูกค้านิติบุคคลประเภท Fleet</label>
+            </div>
+
+            <div class="section">
+                <h3>2. เงื่อนไขของบัญชี</h3>
+                <label><input type="checkbox" name="mob"> เปิดบัญชีกับบริษัทมาแล้วตั้งแต่ 6 เดือนขึ้นไป (MOB ≥ 6)</label>
+                <label><input type="checkbox" name="paymentHistory"> ชำระค่างวดมาแล้วอย่างน้อย 4 งวดล่าสุดติดกัน (หรือ 1 ช่วงสำหรับรายฤดูกาล)</label>
+                <div class="field-row">
+                    <div class="input-group">
+                        <label for="dpdDays">จำนวนวันค้างชำระ (DPD วัน)</label>
+                        <input class="input-control" id="dpdDays" name="dpdDays" type="number" min="0" step="1" placeholder="เช่น 30">
+                    </div>
+                    <div class="input-group">
+                        <label for="currentInstallment">ค่างวดปัจจุบัน (บาท)</label>
+                        <input class="input-control" id="currentInstallment" name="currentInstallment" type="number" min="0" step="0.01" placeholder="เช่น 10000">
+                    </div>
+                    <div class="input-group">
+                        <label for="paidAmount">ยอดที่ชำระแล้ว (บาท)</label>
+                        <input class="input-control" id="paidAmount" name="paidAmount" type="number" min="0" step="0.01" placeholder="เช่น 1200">
+                    </div>
+                </div>
+                <p class="helper" id="paymentHint">ยอดชำระขั้นต่ำ 10%: - บาท</p>
+            </div>
+
+            <div class="section">
+                <h3>3. คุณสมบัติของผู้กู้ (เลือกข้อที่ตรงกับความจริงอย่างน้อย 1 ข้อ)</h3>
+                <label><input type="checkbox" name="reason" value="disaster"> วิกฤตการณ์หรือภัยพิบัติ (อุทกภัย ภัยแล้ง แผ่นดินไหว ฯลฯ)</label>
+                <label><input type="checkbox" name="reason" value="accident"> ประสบอุบัติเหตุ/เจ็บป่วย (ค่ารักษา > 50% หรือพักรักษาตัว > 7 วัน)</label>
+                <label><input type="checkbox" name="reason" value="repair"> ซ่อมแซมรถ/สถานประกอบการ/ที่อยู่อาศัย จากอุบัติเหตุหรือเหตุฉุกเฉิน</label>
+                <label><input type="checkbox" name="reason" value="tuition"> ชำระค่าเทอมบุตร หรือบุตรบุญธรรม</label>
+                <label><input type="checkbox" name="reason" value="delay"> คู่ค้าเลื่อนการชำระค่างาน</label>
+                <label><input type="checkbox" name="reason" value="employee"> เป็นพนักงานที่มีรายได้ประจำ</label>
+            </div>
+
+            <div class="section">
+                <h3>4. เงื่อนไขข้อยกเว้น (ต้องติ๊กเพื่อยืนยันว่าไม่ได้เข้าร่วม)</h3>
+                <label><input type="checkbox" name="exclusion"> ไม่ได้อยู่ในโครงการ TDR / คุณสู้เราช่วย / Step Payment 25/50 / ผ่อนชำระแบบ One time</label>
+            </div>
+
+            <div class="section">
+                <h3>5. เอกสารประกอบการพิจารณา (Required Documents)</h3>
+                <h4>5.1 เอกสารบังคับ (ต้องมีทุกกรณี)</h4>
+                <div class="doc-group">
+                    <label><input type="checkbox" name="doc_main"> 1. หนังสือแจ้งความประสงค์ขอพักชำระหนี้ (สำเนาบัตรประชาชนในตัว)</label>
+                    <label><input type="checkbox" name="doc_main"> 2. Sales Sheet ที่ผู้กู้ลงนามแล้ว (พิมพ์จาก Branch App)</label>
+                    <label><input type="checkbox" name="doc_main"> 3. หลักฐานการชำระค่างวด 10%</label>
+                    <label><input type="checkbox" name="doc_main"> 4. ภาพหน้าจอ Mobius หน้ายอดชำระเงินกู้ที่เรียกเก็บ (แสดงการจ่าย 4 งวดติดกัน)</label>
+                    <label><input type="checkbox" name="doc_main"> 5. ภาพถ่าย Time stamp 2 ภาพ (ผู้กู้ขณะเขียนคำร้อง และพนักงานคู่ผู้กู้โดยถือบัตรพนักงาน)</label>
+                </div>
+
+                <h4>5.2 เอกสารเพิ่มเติมตามเหตุผลที่ขอพักชำระหนี้</h4>
+                <p class="helper">หมายเหตุ: หมวด 5.2 เลือกได้มากกว่า 1 กรณี และไม่บังคับต่อผลผ่าน/ไม่ผ่าน</p>
+                <div class="doc-group reason-doc" data-reason="disaster">
+                    <p class="doc-group-title">กรณี 1: วิกฤตการณ์หรือภัยพิบัติ</p>
+                    <label><input type="checkbox" name="doc_reason_disaster"> ทะเบียนบ้านผู้กู้ที่อยู่ในเขตประกาศ หรือภาพถ่ายหลักประกัน/ที่อยู่อาศัยที่เสียหาย พร้อม Time stamp / พิกัดทางอากาศ</label>
+                    <label><input type="checkbox" name="doc_reason_disaster"> เอกสารยืนยันความเป็นเจ้าของ (สัญญาเช่า, โฉนด, หรือสำเนาทะเบียนรถ)</label>
+                </div>
+
+                <div class="doc-group reason-doc" data-reason="accident">
+                    <p class="doc-group-title">กรณี 2: ประสบอุบัติเหตุ หรือเจ็บป่วย</p>
+                    <label><input type="checkbox" name="doc_reason_accident"> ภาพหน้าจอ Mobius แสดงอาชีพ (ต้องไม่เป็นข้าราชการ)</label>
+                    <label><input type="checkbox" name="doc_reason_accident"> ใบเสร็จค่ารักษาพยาบาล (>50% ของค่างวด) <span class="alert">*สแกนผ่าน QR Form เท่านั้น คืนลูกค้าห้ามเก็บสำเนา</span></label>
+                    <label><input type="checkbox" name="doc_reason_accident"> ใบรับรองแพทย์ (ระบุพัก >7 วัน และระบุอาการ) <span class="alert">*สแกนผ่าน QR Form เท่านั้น คืนลูกค้าห้ามเก็บสำเนา</span></label>
+                </div>
+
+                <div class="doc-group reason-doc" data-reason="repair">
+                    <p class="doc-group-title">กรณี 3: ซ่อมแซมรถ, สถานประกอบการ, หรือที่อยู่อาศัย</p>
+                    <label><input type="checkbox" name="doc_reason_repair"> เอกสารแสดงความเป็นเจ้าของ (ทะเบียนบ้าน, ทะเบียนรถ+ใบขับขี่, โฉนดที่ดิน)</label>
+                    <label><input type="checkbox" name="doc_reason_repair"> ภาพถ่ายสิ่งที่เสียหาย พร้อม Time stamp (รวมภาพพนักงานคู่ผู้กู้ที่จุดเสียหาย)</label>
+                    <label><input type="checkbox" name="doc_reason_repair"> ใบกำกับภาษี หรือใบเสร็จค่าซ่อมแซม</label>
+                    <label><input type="checkbox" name="doc_reason_repair"> ภาพถ่ายในการซ่อม (เช่น รถที่อู่เห็นป้ายทะเบียน)</label>
+                    <label><input type="checkbox" name="doc_reason_repair"> ใบแจ้งความ หรือใบแจ้งเคลมประกัน (ถ้ามี)</label>
+                </div>
+
+                <div class="doc-group reason-doc" data-reason="tuition">
+                    <p class="doc-group-title">กรณี 4: ค่าเทอมบุตร หรือบุตรบุญธรรม</p>
+                    <label><input type="checkbox" name="doc_reason_tuition"> สูติบัตร หรือทะเบียนบ้านที่แสดงความสัมพันธ์ (หรือใบรับรองบุตรบุญธรรม)</label>
+                    <label><input type="checkbox" name="doc_reason_tuition"> ใบเสร็จค่าเทอมออกโดยสถานศึกษา ระบุชื่อนักเรียน (ไม่รับบิลเงินสด/เขียนมือ)</label>
+                </div>
+
+                <div class="doc-group reason-doc" data-reason="delay">
+                    <p class="doc-group-title">กรณี 5: คู่ค้าเลื่อนชำระค่างาน</p>
+                    <label><input type="checkbox" name="doc_reason_delay"> ภาพหน้าจอ Mobius แสดงอาชีพ (ต้องไม่เป็นพนักงานบริษัท, ข้าราชการ, พนักงานราชการ)</label>
+                    <label><input type="checkbox" name="doc_reason_delay"> เอกสารยืนยันการเลื่อนจ่าย (เช่น อีเมล หรือใบแจ้งเลื่อนการชำระเงินจากบริษัทคู่ค้า)</label>
+                </div>
+
+                <h4>5.3 เอกสารเพิ่มเติมตามประเภทลูกค้า</h4>
+                <div class="doc-group type-doc" data-customer-type="individual">
+                    <p class="doc-group-title">ลูกค้าบุคคลธรรมดา</p>
+                    <label><input type="checkbox" name="doc_customer_individual"> สำเนาบัตรประชาชนผู้กู้ (ยังไม่หมดอายุ และลงนามรับรองสำเนาถูกต้อง)</label>
+                    <label><input type="checkbox" name="doc_customer_individual"> เอกสารยืนยันที่อยู่ปัจจุบัน (ทะเบียนบ้าน/บิลค่าสาธารณูปโภค/หนังสือรับรองที่อยู่)</label>
+                    <label><input type="checkbox" name="doc_customer_individual"> หลักฐานรายได้หรือเอกสารประกอบอาชีพล่าสุด</label>
+                </div>
+
+                <div class="doc-group type-doc" data-customer-type="corporate">
+                    <p class="doc-group-title">ลูกค้านิติบุคคลประเภท Fleet</p>
+                    <label><input type="checkbox" name="doc_customer_corporate"> หนังสือรับรองนิติบุคคลอายุไม่เกิน 6 เดือน</label>
+                    <label><input type="checkbox" name="doc_customer_corporate"> รายชื่อกรรมการ/ผู้มีอำนาจลงนาม และตราประทับบริษัท (ถ้ามี)</label>
+                    <label><input type="checkbox" name="doc_customer_corporate"> สำเนาบัตรประชาชนผู้มีอำนาจลงนาม พร้อมหนังสือมอบอำนาจ (กรณีมอบอำนาจ)</label>
+                    <label><input type="checkbox" name="doc_customer_corporate"> เอกสารจดทะเบียนภาษีมูลค่าเพิ่ม (ภ.พ.20) หรือทะเบียนพาณิชย์</label>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="button" id="checkEligibility">ตรวจสอบคุณสมบัติและเอกสาร</button>
+                <div id="result" role="status" aria-live="polite"></div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('skipPaymentChecklist');
+        const result = document.getElementById('result');
+        const checkButton = document.getElementById('checkEligibility');
+        const dpdDaysInput = document.getElementById('dpdDays');
+        const currentInstallmentInput = document.getElementById('currentInstallment');
+        const paidAmountInput = document.getElementById('paidAmount');
+        const paymentHint = document.getElementById('paymentHint');
+        const reasonInputs = form.querySelectorAll('input[name="reason"]');
+        const customerTypeInputs = form.querySelectorAll('input[name="customerType"]');
+        const reasonDocGroups = form.querySelectorAll('.reason-doc');
+        const customerDocGroups = form.querySelectorAll('.type-doc');
+
+        function isChecked(name) {
+            const input = form.querySelector(`input[name="${name}"]`);
+            return Boolean(input && input.checked);
+        }
+
+        function selectedCustomerType() {
+            const selected = form.querySelector('input[name="customerType"]:checked');
+            return selected ? selected.value : '';
+        }
+
+        function updateCustomerDocuments() {
+            const selectedType = selectedCustomerType();
+
+            customerDocGroups.forEach((group) => {
+                const type = group.dataset.customerType;
+                const isActive = selectedType === type;
+
+                group.classList.toggle('active', isActive);
+
+                if (!isActive) {
+                    group.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+                        checkbox.checked = false;
+                    });
+                }
+            });
+        }
+
+        function updateReasonDocuments() {
+            const selectedReasons = new Set(Array.from(form.querySelectorAll('input[name="reason"]:checked')).map((input) => input.value));
+
+            reasonDocGroups.forEach((group) => {
+                const reason = group.dataset.reason;
+                const isActive = selectedReasons.has(reason);
+
+                group.classList.toggle('active', isActive);
+
+                if (!isActive) {
+                    group.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+                        checkbox.checked = false;
+                    });
+                }
+            });
+        }
+
+        function allChecked(nodeList) {
+            return Array.from(nodeList).every((input) => input.checked);
+        }
+
+        function toNumber(value) {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : NaN;
+        }
+
+        function formatMoney(value) {
+            return value.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function updatePaymentRequirements() {
+            const installment = toNumber(currentInstallmentInput.value);
+
+            if (!Number.isFinite(installment) || installment <= 0) {
+                paymentHint.textContent = 'ยอดชำระขั้นต่ำ 10%: - บาท';
+                return;
+            }
+
+            const minPayment = installment * 0.1;
+            paymentHint.textContent = `ยอดชำระขั้นต่ำ 10%: ${formatMoney(minPayment)} บาท`;
+        }
+
+        function checkEligibility() {
+            const reasons = form.querySelectorAll('input[name="reason"]:checked');
+            const missingItems = [];
+            const selectedType = selectedCustomerType();
+            const dpdDays = toNumber(dpdDaysInput.value);
+            const installment = toNumber(currentInstallmentInput.value);
+            const paidAmount = toNumber(paidAmountInput.value);
+
+            if (!selectedType) missingItems.push('เลือกประเภทลูกค้า (บุคคลธรรมดา/นิติบุคคล)');
+            if (!isChecked('mob')) missingItems.push('MOB >= 6 เดือน');
+            if (!isChecked('paymentHistory')) missingItems.push('ประวัติชำระ 4 งวดล่าสุด');
+            if (!Number.isFinite(dpdDays) || dpdDays < 0) {
+                missingItems.push('กรอกจำนวนวันค้างชำระ (DPD) ให้ถูกต้อง');
+            } else if (dpdDays > 45) {
+                missingItems.push(`DPD เกินเงื่อนไข (ต้องไม่เกิน 45 วัน, ปัจจุบัน ${dpdDays} วัน)`);
+            }
+            if (!Number.isFinite(installment) || installment <= 0) {
+                missingItems.push('กรอกค่างวดปัจจุบันให้ถูกต้อง');
+            }
+            if (!Number.isFinite(paidAmount) || paidAmount < 0) {
+                missingItems.push('กรอกยอดที่ชำระแล้วให้ถูกต้อง');
+            }
+            if (Number.isFinite(installment) && installment > 0 && Number.isFinite(paidAmount) && paidAmount >= 0) {
+                const minPayment = installment * 0.1;
+                if (paidAmount < minPayment) {
+                    missingItems.push(`ยอดชำระไม่ถึง 10% (ต้องอย่างน้อย ${formatMoney(minPayment)} บาท, ชำระแล้ว ${formatMoney(paidAmount)} บาท)`);
+                }
+            }
+            if (!isChecked('exclusion')) missingItems.push('ยืนยันไม่อยู่ในโครงการข้อยกเว้น');
+            if (reasons.length === 0) missingItems.push('เลือกเหตุผลการขอพักชำระหนี้อย่างน้อย 1 ข้อ');
+
+            const mainDocs = form.querySelectorAll('input[name="doc_main"]');
+            if (!allChecked(mainDocs)) missingItems.push('เอกสารบังคับ 5.1 ให้ครบทุกข้อ');
+
+            // หมวด 5.2 เป็นเอกสารเพิ่มเติม: เลือกได้หลายกรณี แต่ไม่บังคับต่อผลผ่าน/ไม่ผ่าน
+
+            if (selectedType) {
+                const selectedTypeGroup = form.querySelector(`.type-doc[data-customer-type="${selectedType}"]`);
+                if (selectedTypeGroup) {
+                    const typeDocTitle = selectedTypeGroup.querySelector('.doc-group-title');
+                    const typeDocs = selectedTypeGroup.querySelectorAll('input[type="checkbox"]');
+                    if (!allChecked(typeDocs)) {
+                        missingItems.push(`เอกสารประเภทลูกค้าไม่ครบ: ${typeDocTitle ? typeDocTitle.textContent : selectedType}`);
+                    }
+                }
+            }
+
+            if (missingItems.length === 0) {
+                result.className = 'pass';
+                result.textContent = 'ผลการตรวจสอบ: ผ่านเกณฑ์เบื้องต้นและเอกสารครบ สามารถพิจารณาเข้าร่วมโครงการได้';
+                return;
+            }
+
+            result.className = 'fail';
+            result.innerHTML = `ผลการตรวจสอบ: ยังไม่ผ่านเกณฑ์/เอกสารไม่ครบ กรุณาตรวจสอบรายการต่อไปนี้<br>- ${missingItems.join('<br>- ')}`;
+        }
+
+        reasonInputs.forEach((input) => input.addEventListener('change', updateReasonDocuments));
+        customerTypeInputs.forEach((input) => input.addEventListener('change', updateCustomerDocuments));
+        currentInstallmentInput.addEventListener('input', updatePaymentRequirements);
+        checkButton.addEventListener('click', checkEligibility);
+
+        updateReasonDocuments();
+        updateCustomerDocuments();
+        updatePaymentRequirements();
+    </script>
+</body>
+</html>
